@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ariha AI - Image Download</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background-color: #f8f9fa;
+      color: #333;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 800px;
+      text-align: center;
+      padding: 2rem;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+      color: #4a54f1;
+    }
+
+    .image-container {
+      margin: 2rem 0;
+      position: relative;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: 600px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(0, 0, 0, 0.1);
+      border-top-color: #4a54f1;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .download-btn {
+      background-color: #4a54f1;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .download-btn:hover {
+      background-color: #3a43cc;
+      transform: translateY(-2px);
+    }
+
+    /* Add new CSS for the disabled download button */
+    .download-btn.disabled {
+      background-color: #a0a0a0;
+      cursor: pointer;
+      transform: none;
+    }
+
+    .download-btn.disabled:hover {
+      background-color: #a0a0a0;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .error {
+      color: #e53935;
+      margin: 2rem 0;
+    }
+
+    .back-link {
+      color: #4a54f1;
+      text-decoration: none;
+      margin-top: 2rem;
+      display: inline-block;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Add styles for the download notification */
+    .download-notification {
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 8px;
+      padding: 10px 20px;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .download-notification.visible {
+      opacity: 1;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+      }
+
+      .container {
+        background-color: #292929;
+      }
+
+      h1 {
+        color: #6a74f1;
+      }
+
+      .spinner {
+        border-color: rgba(255, 255, 255, 0.1);
+        border-top-color: #6a74f1;
+      }
+
+      .download-btn {
+        background-color: #6a74f1;
+      }
+
+      .download-btn:hover {
+        background-color: #5a64e1;
+      }
+
+      .back-link {
+        color: #6a74f1;
+      }
+
+      .download-btn.disabled {
+        background-color: #505050;
+      }
+
+      .download-btn.disabled:hover {
+        background-color: #505050;
+      }
+
+      .download-notification {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Ariha AI - Image Download</h1>
+
+    <div id="content">
+      <div class="loading">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+      const contentDiv = document.getElementById('content');
+
+      // Get the image URL from the URL parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      const imageUrl = urlParams.get('url');
+
+      if (!imageUrl) {
+        contentDiv.innerHTML = '<p class="error">No image URL provided. Please go back and try again.</p>';
+        return;
+      }
+
+      // Function to handle image download
+      function downloadImage(imageUrl) {
+        // Extract filename from URL or use default
+        let filename = 'ariha-generated-image.jpg';
+        try {
+          // Try to get the filename from the URL
+          const urlParts = imageUrl.split('/');
+          if (urlParts.length > 0) {
+            const potentialFilename = urlParts[urlParts.length - 1];
+            // If it has a valid image extension, use it
+            if (/\.(jpe?g|png|gif|webp)$/i.test(potentialFilename)) {
+              filename = potentialFilename;
+            }
+          }
+        } catch (e) {
+          console.error('Error extracting filename:', e);
+        }
+
+        // Fetch the image as a blob
+        fetch(imageUrl, {
+          method: 'GET',
+          mode: 'cors', // Try with CORS mode
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          // Create blob URL and anchor
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = filename;
+          
+          // Append to document, click, and clean up
+          document.body.appendChild(link);
+          link.click();
+          
+          // Clean up
+          setTimeout(() => {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+          }, 100);
+        })
+        .catch(error => {
+          console.error('Download failed:', error);
+          
+          // Fallback method if fetch fails
+          try {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => {
+              document.body.removeChild(link);
+            }, 100);
+          } catch (e) {
+            console.error('Fallback download failed:', e);
+            alert('Download failed. Please try right-clicking the image and selecting "Save image as..."');
+          }
+        });
+      }
+
+      try {
+        // Create the image element
+        const img = document.createElement('img');
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'image-container';
+
+        // Set up image load and error handlers
+        img.onload = function () {
+          imgContainer.appendChild(img);
+          contentDiv.innerHTML = '';
+          contentDiv.appendChild(imgContainer);
+
+          // Add download button
+          const downloadBtn = document.createElement('button');
+          downloadBtn.className = 'download-btn'; // Remove 'disabled' class
+          downloadBtn.textContent = 'Download Image';
+          downloadBtn.onclick = function () {
+            downloadImage(img.src);
+          };
+          contentDiv.appendChild(downloadBtn);
+
+          // Create and show download notification
+          const notification = document.createElement('div');
+          notification.className = 'download-notification';
+          notification.textContent = 'Download started automatically...';
+          document.body.appendChild(notification);
+
+          // Make notification visible
+          setTimeout(() => {
+            notification.classList.add('visible');
+          }, 100);
+
+          // Hide notification after 5 seconds
+          setTimeout(() => {
+            notification.classList.remove('visible');
+            // Remove the element after fade out animation completes
+            setTimeout(() => {
+              if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+              }
+            }, 300);
+          }, 5000);
+
+          // Automatically download the image
+          downloadImage(img.src);
+        };
+
+        img.onerror = function () {
+          contentDiv.innerHTML = '<p class="error">Failed to load image. The image may no longer be available or the server may be experiencing issues.</p>' +
+                                '<button class="download-btn" onclick="window.location.reload()">Retry</button>' +
+                                '<a class="back-link" href="javascript:history.back()">Go Back</a>';
+        };
+
+        // Set the image source directly to the URL from the parameter
+        img.src = imageUrl;
+        img.alt = 'Generated Image';
+
+      } catch (error) {
+        console.error('Error:', error);
+        contentDiv.innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
+      }
+    });
+  </script>
+</body>
+
+</html>
