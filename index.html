@@ -1,176 +1,3 @@
-<script>
-  // Message Limit Tracker with Popup
-  (function () {
-    const MESSAGE_LIMIT = 3;
-    const COOKIE_DURATION_DAYS = 30;
-
-    const style = document.createElement('style');
-    style.textContent = `
-      .limit-modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(0, 0, 0, 0.75);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .limit-modal {
-        background: linear-gradient(45deg, #1e293b, #0f172a);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 40px;
-        width: 90%;
-        max-width: 500px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        text-align: center;
-        animation: modal-appear 0.3s ease-out;
-      }
-      @keyframes modal-appear {
-        from { opacity: 0; transform: translateY(-30px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      .limit-modal h2 {
-        font-size: 24px;
-        margin-bottom: 16px;
-        color: #e2e8f0;
-        font-weight: 700;
-      }
-      .limit-modal p {
-        font-size: 16px;
-        line-height: 1.6;
-        margin-bottom: 24px;
-        color: #94a3b8;
-      }
-      .upgrade-btn {
-        display: inline-block;
-        background: linear-gradient(135deg, #6366f1, #a855f7);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 14px 32px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        text-decoration: none;
-      }
-      .upgrade-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.6);
-      }
-    `;
-    document.head.appendChild(style);
-
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
-      return null;
-    }
-
-    function setCookie(name, value, days) {
-      const date = new Date();
-      date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-      const expires = `expires=${date.toUTCString()}`;
-      document.cookie = `${name}=${value};${expires};path=/`;
-    }
-
-    function showUpgradeModal() {
-      const modalOverlay = document.createElement('div');
-      modalOverlay.className = 'limit-modal-overlay';
-
-      const modalContent = document.createElement('div');
-      modalContent.className = 'limit-modal';
-
-      const modalTitle = document.createElement('h2');
-      modalTitle.textContent = 'You have exceeded the limit in Free plan';
-
-      const modalMessage = document.createElement('p');
-      modalMessage.textContent = 'Upgrade now to continue using our premium features and enjoy unlimited messaging.';
-
-      const upgradeButton = document.createElement('a');
-      upgradeButton.className = 'upgrade-btn';
-      upgradeButton.textContent = '> Back';
-      upgradeButton.href = 'https://ariha.ai/history';
-
-      modalContent.appendChild(modalTitle);
-      modalContent.appendChild(modalMessage);
-      modalContent.appendChild(upgradeButton);
-      modalOverlay.appendChild(modalContent);
-
-      document.body.appendChild(modalOverlay);
-      document.body.style.overflow = 'hidden';
-    }
-
-    function initClickCounter() {
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', setupClickCounter);
-      } else {
-        setupClickCounter();
-      }
-    }
-
-    function setupClickCounter() {
-      const sendButton = document.getElementById('send-btn');
-
-      if (!sendButton) {
-        console.error('Send button not found. Message limit tracking could not be initialized.');
-        return;
-      }
-
-      let messageCount = parseInt(getCookie('message_count') || '0');
-      const isSubscribed = getCookie('subscribed') === 'yes';
-
-      sendButton.addEventListener('click', function () {
-        const userInput = document.getElementById('user-input');
-        if (userInput && userInput.value.trim()) {
-          messageCount++;
-          setCookie('message_count', messageCount.toString(), COOKIE_DURATION_DAYS);
-
-          if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
-            showUpgradeModal();
-          }
-        }
-      });
-
-      const userInput = document.getElementById('user-input');
-      if (userInput) {
-        userInput.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
-              e.preventDefault();
-              showUpgradeModal();
-            } else if (userInput.value.trim()) {
-              messageCount++;
-              setCookie('message_count', messageCount.toString(), COOKIE_DURATION_DAYS);
-
-              if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
-                setTimeout(showUpgradeModal, 500);
-              }
-            }
-          }
-        });
-      }
-
-      if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
-        showUpgradeModal();
-      }
-    }
-
-    initClickCounter();
-  })();
-</script>
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -492,7 +319,7 @@
     .send-btn {
       position: absolute;
       right: 8px;
-      bottom: 15px;
+      bottom: 10px;
       /* Moved UP significantly - higher value moves it up */
       background: var(--primary-color);
       color: white;
@@ -520,7 +347,7 @@
     /* Mobile-specific adjustments */
     @media (max-width: 480px) {
       .send-btn {
-        bottom: 15px;
+        bottom: 10px;
         /* Keep it high on mobile */
         right: 8px;
       }
@@ -639,6 +466,79 @@
     html.w-mod-js:not(.w-mod-ix) [data-w-id] {
       height: auto !important;
       min-height: 0 !important;
+    }
+  </style>
+
+  <!-- Limit modal -->
+  <style>
+    .limit-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.75);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .limit-modal {
+      background: linear-gradient(45deg, #1e293b, #0f172a);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 40px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      animation: modal-appear 0.3s ease-out;
+    }
+
+    @keyframes modal-appear {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .limit-modal h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+      color: #e2e8f0;
+      font-weight: 700;
+    }
+
+    .limit-modal p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      color: #94a3b8;
+    }
+
+    .upgrade-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .upgrade-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px -10px rgba(99, 102, 241, 0.6);
     }
   </style>
 </head>
@@ -918,6 +818,113 @@
       adjustLayout();
       window.addEventListener('resize', adjustLayout);
     });
+  </script>
+
+
+  <script>
+    // Message Limit Tracker with Popup
+    (function () {
+      const MESSAGE_LIMIT = 3;
+      const COOKIE_DURATION_DAYS = 30;
+
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+        return null;
+      }
+
+      function setCookie(name, value, days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        const expires = `expires=${date.toUTCString()}`;
+        document.cookie = `${name}=${value};${expires};path=/`;
+      }
+
+      function showUpgradeModal() {
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'limit-modal-overlay';
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'limit-modal';
+
+        const modalTitle = document.createElement('h2');
+        modalTitle.textContent = 'You have exceeded the limit in Free plan';
+
+        const modalMessage = document.createElement('p');
+        modalMessage.textContent = 'Upgrade now to continue using our premium features and enjoy unlimited messaging.';
+
+        const upgradeButton = document.createElement('a');
+        upgradeButton.className = 'upgrade-btn';
+        upgradeButton.textContent = '> Back';
+        upgradeButton.href = 'https://ariha.ai/history';
+
+        modalContent.appendChild(modalTitle);
+        modalContent.appendChild(modalMessage);
+        modalContent.appendChild(upgradeButton);
+        modalOverlay.appendChild(modalContent);
+
+        document.body.appendChild(modalOverlay);
+        document.body.style.overflow = 'hidden';
+      }
+
+      function initClickCounter() {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', setupClickCounter);
+        } else {
+          setupClickCounter();
+        }
+      }
+
+      function setupClickCounter() {
+        const sendButton = document.getElementById('send-btn');
+
+        if (!sendButton) {
+          console.error('Send button not found. Message limit tracking could not be initialized.');
+          return;
+        }
+
+        let messageCount = parseInt(getCookie('message_count') || '0');
+        const isSubscribed = getCookie('subscribed') === 'yes';
+
+        sendButton.addEventListener('click', function () {
+          const userInput = document.getElementById('user-input');
+          if (userInput && userInput.value.trim()) {
+            messageCount++;
+            setCookie('message_count', messageCount.toString(), COOKIE_DURATION_DAYS);
+
+            if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
+              showUpgradeModal();
+            }
+          }
+        });
+
+        const userInput = document.getElementById('user-input');
+        if (userInput) {
+          userInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
+                e.preventDefault();
+                showUpgradeModal();
+              } else if (userInput.value.trim()) {
+                messageCount++;
+                setCookie('message_count', messageCount.toString(), COOKIE_DURATION_DAYS);
+
+                if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
+                  setTimeout(showUpgradeModal, 500);
+                }
+              }
+            }
+          });
+        }
+
+        if (messageCount >= MESSAGE_LIMIT && !isSubscribed) {
+          showUpgradeModal();
+        }
+      }
+
+      initClickCounter();
+    })();
   </script>
 </body>
 
