@@ -585,49 +585,11 @@
 
       // Back and close button event listeners
       backButton.addEventListener('click', () => {
-        // Get the referrer URL (previous page)
-        const referrer = document.referrer;
-        
-        // Check if referrer exists and is from ariha.ai or its subdomain
-        if (referrer && (
-            referrer.includes('ariha.ai') || 
-            referrer.includes('.ariha.ai')
-          )) {
-            console.log(referrer);
-            return;
-          // If referrer contains 'share', redirect to chat.ariha.ai
-          if (referrer.includes('ariha.ai/share')) {
-            window.location.href = 'https://chat.ariha.ai/';
-          } else {
-            // For history or other ariha.ai pages, go back one step
-            window.history.back();
-          }
-        } else {
-          // If not from ariha.ai domain, go to chat.ariha.ai
-          window.location.href = 'https://chat.ariha.ai/';
-        }
+        window.location.href = 'https://chat.ariha.ai/';
       });
 
       closeButton.addEventListener('click', () => {
-        // Get the referrer URL (previous page)
-        const referrer = document.referrer;
-        
-        // Check if referrer exists and is from ariha.ai or its subdomain
-        if (referrer && (
-            referrer.includes('ariha.ai') || 
-            referrer.includes('.ariha.ai')
-          )) {
-          // If referrer contains 'share', redirect to chat.ariha.ai
-          if (referrer.includes('ariha.ai/share')) {
-            window.location.href = 'https://chat.ariha.ai/';
-          } else {
-            // For history or other ariha.ai pages, go back one step
-            window.history.back();
-          }
-        } else {
-          // If not from ariha.ai domain, go to chat.ariha.ai
-          window.location.href = 'https://chat.ariha.ai/';
-        }
+        window.location.href = 'https://chat.ariha.ai/';
       });
 
       // State variables
