@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chat History</title>
+    <!-- Added LZString library for URL compression -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <style>
+        /* Modern reset & base styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            margin: 0;
+            padding: 16px;
+            background: #0f1729;
+            color: #e6e9f0;
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at top left, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(232, 121, 249, 0.1) 0%, transparent 50%);
+            background-attachment: fixed;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 16px auto;
+            background: rgba(15, 23, 42, 0.7);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .header {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin-bottom: 24px;
+            position: relative;
+            width: 100% !important;
+            text-align: center !important;
+        }
+
+        h2 {
+            width: 100% !important;
+            margin: 0 auto !important;
+            text-align: center !important;
+            color: #fff;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            display: block !important;
+            position: relative !important;
+        }
+
+        h4 {
+            text-align: center;
+            color: rgba(230, 233, 240, 0.7);
+            font-weight: 400;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .chat-item {
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 12px;
+            position: relative;
+            background: rgba(15, 23, 42, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        .chat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-container {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            cursor: pointer;
+            width: 100% !important;
+            position: relative !important;
+            flex-direction: row !important;
+        }
+
+        .question {
+            font-weight: 600;
+            background: linear-gradient(45deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            transition: opacity 0.3s ease;
+            font-size: 16px;
+            flex: 1 !important;
+            padding-right: 30px !important;
+            /* Increased to make room for icon */
+            text-align: left !important;
+            max-width: calc(100% - 30px) !important;
+        }
+
+        .question:hover {
+            opacity: 0.9;
+        }
+
+        /* Modern expand/collapse icon */
+        .expand-icon {
+            width: 24px !important;
+            height: 24px !important;
+            min-width: 24px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: transform 0.3s ease;
+            color: rgba(230, 233, 240, 0.7);
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            position: absolute !important;
+            right: 0 !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+        }
+
+        .expand-icon svg {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .open .expand-icon svg {
+            transform: rotate(180deg) translateY(0) !important;
+        }
+
+        .expand-icon svg {
+            transform: translateY(0) !important;
+            position: relative !important;
+            width: 16px !important;
+            height: 16px !important;
+            display: block !important;
+        }
+
+        .answer {
+            display: block;
+            /* Changed from none to block */
+            margin-top: 12px;
+            padding-top: 12px;
+            color: #c7d2fe;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        /* X icon at top right */
+        .close-btn {
+            position: fixed !important;
+            top: 20px !important;
+            right: 20px !important;
+            left: auto !important;
+            bottom: auto !important;
+            width: 40px !important;
+            height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(15, 23, 42, 0.8) !important;
+            color: white !important;
+            border-radius: 50% !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+            text-decoration: none !important;
+            z-index: 9999 !important;
+            /* Increased z-index */
+            transition: transform 0.2s ease !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            transform: scale(1.05);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .close-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Empty state styling */
+        .empty-state {
+            text-align: center;
+            padding: 20px;
+            color: rgba(230, 233, 240, 0.7);
+        }
+
+        /* Followup input styling */
+        .followup-container {
+            width: 95%;
+            margin: 10px auto 0;
+            position: relative;
+        }
+
+        .followup-input {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            background-color: rgba(15, 23, 42, 0.4);
+            color: #e6e9f0;
+            cursor: pointer;
+        }
+
+        .followup-input::placeholder {
+            color: rgba(230, 233, 240, 0.5);
+        }
+
+        /* Date display styling */
+        .chat-date {
+            color: rgba(230, 233, 240, 0.7);
+            font-size: 12px;
+            margin-bottom: 6px;
+            text-align: left;
+            font-weight: 400;
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                padding: 16px;
+                margin: 0 auto 60px;
+                /* Add bottom margin for FAB */
+            }
+
+            .chat-item {
+                padding: 12px;
+            }
+
+            .question {
+                font-size: 15px;
+                line-height: 1.4;
+            }
+
+            .answer {
+                font-size: 14px;
+            }
+
+            h2 {
+                font-size: 20px;
+                text-align: center !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                position: relative !important;
+                margin: 0 auto !important;
+                transform: translateX(12px) !important;
+                /* Shift right on mobile */
+            }
+
+            h4 {
+                font-size: 13px;
+            }
+
+            .header,
+            .container .header {
+                display: flex !important;
+                justify-content: center !important;
+                width: 100% !important;
+                text-align: center !important;
+                position: relative !important;
+            }
+
+            /* Add bottom spacing to avoid mobile footer menu */
+            #chatHistory:after {
+                content: "";
+                display: block;
+                height: 0.3in;
+                width: 100%;
+            }
+        }
+
+        /* Loader animation */
+        .loader {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .loader-dot {
+            width: 8px;
+            height: 8px;
+            margin: 0 4px;
+            border-radius: 50%;
+            background-color: rgba(230, 233, 240, 0.7);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        .loader-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loader-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(0.8);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Share button styles */
+        .share-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: rgba(230, 233, 240, 0.7);
+            padding: 0;
+            margin-left: 10px;
+            position: relative;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .share-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .share-btn:hover {
+            color: rgba(230, 233, 240, 1);
+        }
+
+        /* Share dropdown menu */
+        .share-dropdown {
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            padding: 5px 0;
+            min-width: 140px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+
+        .share-dropdown.show {
+            display: block;
+        }
+
+        .share-option {
+            padding: 8px 12px;
+            color: rgba(230, 233, 240, 0.9);
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        .share-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Tooltip for feedback */
+        .tooltip {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            background: rgba(15, 23, 42, 0.9);
+            color: #e6e9f0;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            z-index: 1001;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        /* Added animation for better visibility */
+        .tooltip.show {
+            animation: pulse-tooltip 2s ease-in-out;
+        }
+
+        @keyframes pulse-tooltip {
+            0% {
+                transform: scale(1);
+            }
+
+            10% {
+                transform: scale(1.1);
+            }
+
+            20% {
+                transform: scale(1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header"
+            style="display: flex !important; justify-content: center !important; width: 100% !important; text-align: center !important; position: relative !important;">
+            <h2
+                style="text-align: center !important; width: 100% !important; margin: 0 auto !important; display: block !important; position: relative !important; transform: translateX(15px) !important;">
+                Chat History</h2>
+        </div>
+        <h4>Your Deep Search chats will appear here</h4>
+        <div id="chatHistory"></div>
+    </div>
+
+    <a href="https://chat.ariha.ai" class="close-btn" title="Go to chat">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    </a>
+
+    <script>
+        // Ensure our styles take precedence by adding to head with !important
+        document.addEventListener('DOMContentLoaded', function () {
+            const styleOverrides = document.createElement('style');
+            styleOverrides.innerHTML = `
+        .chat-item .question-container {
+          display: flex !important;
+          justify-content: space-between !important;
+          width: 100% !important;
+        }
+        .chat-item .expand-icon {
+          position: absolute !important;
+          right: 0 !important;
+          top: 50% !important;
+          transform: translateY(-50%) !important;
+        }
+        .close-btn {
+          right: 20px !important;
+          left: auto !important;
+          top: 20px !important;
+        }
+        .header, .container .header {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          width: 100% !important;
+          text-align: center !important;
+          position: relative !important;
+        }
+        h2, .header h2, .container .header h2 {
+          text-align: center !important;
+          width: 100% !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          display: block !important;
+          position: relative !important;
+          left: 0 !important;
+          right: 0 !important;
+        }
+        @media (max-width: 767px) {
+          h2, .header h2, .container .header h2 {
+            text-align: center !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            position: relative !important;
+            margin: 0 auto !important;
+            transform: translateX(15px) !important; /* Shift right on mobile */
+          }
+          .header, .container .header {
+            position: relative !important;
+            justify-content: center !important;
+          }
+        }
+      `;
+            document.head.appendChild(styleOverrides);
+
+            // Direct DOM manipulation as a last resort
+            const headerElement = document.querySelector('.header h2');
+            if (headerElement) {
+                headerElement.setAttribute('style', 'text-align: center !important; width: 100% !important; margin: 0 auto !important; display: block !important; position: relative !important; transform: translateX(15px) !important;');
+            }
+
+            const headerDiv = document.querySelector('.header');
+            if (headerDiv) {
+                headerDiv.setAttribute('style', 'display: flex !important; justify-content: center !important; width: 100% !important; text-align: center !important; position: relative !important;');
+            }
+
+            // Close all share dropdowns when clicking outside
+            document.addEventListener('click', function (event) {
+                const dropdowns = document.querySelectorAll('.share-dropdown.show');
+                dropdowns.forEach(dropdown => {
+                    if (!dropdown.contains(event.target) && !event.target.closest('.share-btn')) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            });
+        });
+
+        // SVG for the expand/collapse icon
+        const chevronDown = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+        // Modern share icon SVG
+        const shareIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>`;
+
+        // Function to retrieve a cookie value by name
+        function getCookie(name) {
+            const value = "; " + document.cookie;
+            const parts = value.split("; " + name + "=");
+            if (parts.length === 2) return parts.pop().split(";").shift();
+            return "";
+        }
+
+        // Function to format date as "Month Day(st/nd/rd/th), Year"
+        function formatDate(date) {
+            const day = date.getDate();
+            const suffix = getSuffix(day);
+            return date.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            }).replace(/(\d+)/, '$1' + suffix);
+        }
+
+        // Function to get the correct suffix for a day
+        function getSuffix(day) {
+            if (day >= 11 && day <= 13) {
+                return 'th';
+            }
+
+            switch (day % 10) {
+                case 1: return 'st';
+                case 2: return 'nd';
+                case 3: return 'rd';
+                default: return 'th';
+            }
+        }
+
+        // Function to load chat history from cookies
+        function loadChatHistory() {
+            const chatHistoryDiv = document.getElementById('chatHistory');
+            let hasEntries = false;
+            let chatItems = [];
+
+            // Today's date (March 31st, 2025) for fallback
+            const today = new Date('2025-03-31');
+
+            // Loop through 1 to 6 for each chat history entry
+            for (let i = 1; i <= 6; i++) {
+                const question = getCookie('longquestion' + i);
+                const answer = getCookie('longanswer' + i);
+                // Try to get timestamp from a cookie (if your system stores these)
+                const timestamp = getCookie('longquestion' + i + '_time');
+
+                if (question) {
+                    hasEntries = true;
+
+                    // Create chat item container
+                    const chatItem = document.createElement('div');
+                    chatItem.className = 'chat-item open'; // Added 'open' class by default
+
+                    // Create date display element
+                    const dateElement = document.createElement('div');
+                    dateElement.className = 'chat-date';
+
+                    // Use timestamp if available, otherwise use today's date as fallback
+                    let chatDate;
+                    if (timestamp) {
+                        chatDate = new Date(parseInt(timestamp));
+                    } else {
+                        // Fallback: use today's date
+                        chatDate = new Date(today);
+                    }
+
+                    dateElement.textContent = formatDate(chatDate);
+
+                    // Store the timestamp for sorting
+                    chatItem.dataset.timestamp = timestamp || Date.now();
+
+                    // Create share button element with modern icon
+                    const shareButton = document.createElement('button');
+                    shareButton.className = 'share-btn';
+                    shareButton.title = "Share this chat";
+                    shareButton.innerHTML = shareIcon + `<span class="tooltip">Conversation link is copied for sharing on social</span>`;
+
+                    // Create dropdown menu for share options
+                    const shareDropdown = document.createElement('div');
+                    shareDropdown.className = 'share-dropdown';
+
+                    // Create copy link option
+                    const copyOption = document.createElement('div');
+                    copyOption.className = 'share-option';
+                    copyOption.textContent = 'Copy conversation link';
+                    copyOption.onclick = function (e) {
+                        e.stopPropagation();
+                        // Show some immediate feedback
+                        const shareBtn = this.closest('.share-btn');
+                        const tooltip = shareBtn.querySelector('.tooltip');
+                        tooltip.textContent = "Generating link...";
+                        tooltip.classList.add('show');
+
+                        // Get the question and answer directly from the DOM to ensure we have the latest values
+                        const chatItem = this.closest('.chat-item');
+                        const questionElem = chatItem.querySelector('.question');
+                        const answerElem = chatItem.querySelector('.answer');
+
+                        const questionText = questionElem.textContent.trim();
+                        const answerText = answerElem.textContent.trim();
+
+                        // Updated share URL: combine question and answer into one compressed encoded parameter
+                        const combinedData = questionText + "||" + answerText;
+                        const encodedData = LZString.compressToEncodedURIComponent(combinedData);
+                        const destination = "https://ariha.ai/share?data=" + encodedData;
+
+                        copyToClipboard(destination, tooltip);
+                        shareDropdown.classList.remove('show');
+                    };
+
+                    // Add options to dropdown
+                    shareDropdown.appendChild(copyOption);
+
+                    // Add dropdown to button
+                    shareButton.appendChild(shareDropdown);
+
+                    // Add click event for share button
+                    shareButton.addEventListener('click', function (e) {
+                        e.stopPropagation(); // Prevent toggle of answer
+                        shareDropdown.classList.toggle('show');
+                    });
+
+                    // Create a container for date and share button
+                    const dateContainer = document.createElement('div');
+                    dateContainer.style.display = "flex";
+                    dateContainer.style.justifyContent = "space-between";
+                    dateContainer.style.alignItems = "center";
+                    dateContainer.appendChild(dateElement);
+                    dateContainer.appendChild(shareButton);
+
+                    // Append the container to chat item
+                    chatItem.appendChild(dateContainer);
+
+                    // Create question container for flex layout
+                    const questionContainer = document.createElement('div');
+                    questionContainer.className = 'question-container';
+
+                    // Create the question element with gradient styling
+                    const questionElem = document.createElement('p');
+                    questionElem.className = 'question';
+                    questionElem.textContent = decodeURIComponent(question);
+
+                    // Create expand icon container
+                    const expandIcon = document.createElement('div');
+                    expandIcon.className = 'expand-icon';
+                    expandIcon.innerHTML = chevronDown;
+
+                    // Create the answer element (initially hidden)
+                    const answerElem = document.createElement('div');
+                    answerElem.className = 'answer';
+                    answerElem.textContent = decodeURIComponent(answer);
+
+                    // Toggle answer display on click
+                    questionContainer.addEventListener('click', function () {
+                        if (answerElem.style.display === 'block') {
+                            answerElem.style.display = 'none';
+                            chatItem.classList.remove('open');
+                        } else {
+                            answerElem.style.display = 'block';
+                            chatItem.classList.add('open');
+                        }
+                    });
+
+                    // Assemble the chat item
+                    questionContainer.appendChild(questionElem);
+                    questionContainer.appendChild(expandIcon);
+                    chatItem.appendChild(questionContainer);
+                    chatItem.appendChild(answerElem);
+
+                    // Create follow-up input box
+                    const followupContainer = document.createElement('div');
+                    followupContainer.className = 'followup-container';
+
+                    const followupInput = document.createElement('input');
+                    followupInput.type = 'text';
+                    followupInput.className = 'followup-input';
+                    followupInput.placeholder = 'Ask a follow-up question...';
+
+                    // Add click event handler to set cookies and redirect
+                    followupInput.addEventListener('click', function (e) {
+                        e.preventDefault();
+
+                        // Set cookies with the question and answer content
+                        document.cookie = `followupquestion=${encodeURIComponent(questionElem.textContent.trim())}; path=/; domain=.ariha.ai`;
+                        document.cookie = `followupanswer=${encodeURIComponent(answerElem.textContent.trim())}; path=/; domain=.ariha.ai`;
+
+                        // Redirect to ariha.ai/followup
+                        window.location.href = 'https://followup.ariha.ai';
+                    });
+
+                    // Append the input to the container
+                    followupContainer.appendChild(followupInput);
+
+                    // Append the container to the chat item
+                    chatItem.appendChild(followupContainer);
+
+                    // Add to chat items array instead of immediately appending
+                    chatItems.push(chatItem);
+                }
+            }
+
+            // Sort chat items by timestamp in reverse order (most recent first)
+            chatItems.sort((a, b) => b.dataset.timestamp - a.dataset.timestamp);
+
+            // Append sorted items to the chat history
+            chatItems.forEach(item => {
+                chatHistoryDiv.appendChild(item);
+            });
+
+            // Show empty state if no entries
+            if (!hasEntries) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.textContent = 'No chat history yet. Start a new conversation to see your history here.';
+                chatHistoryDiv.appendChild(emptyState);
+            }
+        }
+
+        // Copy text to clipboard with better handling
+        function copyToClipboard(text, tooltip) {
+            console.log("Attempting to copy to clipboard:", text);
+
+            // Try the modern way first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        console.log("Successfully copied via Clipboard API");
+                        showTooltip(tooltip);
+                    })
+                    .catch(err => {
+                        console.error("Clipboard API failed:", err);
+                        fallbackCopy(text, tooltip);
+                    });
+            } else {
+                // Use fallback for browsers without Clipboard API
+                fallbackCopy(text, tooltip);
+            }
+        }
+
+        // Fallback copy method with better error handling
+        function fallbackCopy(text, tooltip) {
+            console.log("Using fallback copy method");
+
+            try {
+                const textarea = document.createElement("textarea");
+                textarea.value = text;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+                textarea.style.left = "-9999px";
+                textarea.style.top = "0";
+                document.body.appendChild(textarea);
+
+                // For mobile devices
+                textarea.contentEditable = true;
+                textarea.readOnly = false;
+
+                // Select the text
+                const range = document.createRange();
+                range.selectNodeContents(textarea);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                textarea.setSelectionRange(0, textarea.value.length);
+
+                const successful = document.execCommand("copy");
+                console.log("execCommand success:", successful);
+
+                if (successful) {
+                    showTooltip(tooltip);
+                } else {
+                    // If execCommand failed, show alert as last resort
+                    alert("Copy failed. Your link is: " + text);
+                }
+
+                document.body.removeChild(textarea);
+            } catch (err) {
+                console.error("Fallback copy failed with error:", err);
+                // Show the text in an alert as absolute last resort
+                alert("Unable to copy automatically. Your link is: " + text);
+            }
+        }
+
+        // Function to show tooltip with better visibility
+        function showTooltip(tooltip) {
+            // Make sure the tooltip exists
+            if (!tooltip) {
+                console.error("Tooltip element not found");
+                return;
+            }
+
+            // Update tooltip text to confirm success
+            tooltip.textContent = "Conversation link is copied for sharing on social";
+
+            // Show the tooltip
+            tooltip.classList.add('show');
+
+            // Hide after delay
+            setTimeout(() => {
+                tooltip.classList.remove('show');
+            }, 2000);
+        }
+
+        // Show loader while loading
+        document.addEventListener('DOMContentLoaded', function () {
+            const chatHistoryDiv = document.getElementById('chatHistory');
+
+            // Create and show loader
+            const loader = document.createElement('div');
+            loader.className = 'loader';
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'loader-dot';
+                loader.appendChild(dot);
+            }
+            chatHistoryDiv.appendChild(loader);
+
+            // Load chat history with a small delay for better UX
+            setTimeout(() => {
+                chatHistoryDiv.removeChild(loader);
+                loadChatHistory();
+            }, 300);
+        });
+    </script>
+</body>
+
+</html>
