@@ -593,8 +593,8 @@
             referrer.includes('ariha.ai') || 
             referrer.includes('.ariha.ai')
           )) {
-          // If from ariha.ai domain, go back to the referrer page
-          window.location.href = referrer;
+          // go back one step
+          window.history.back();
         } else {
           // Otherwise, go to chat.ariha.ai
           window.location.href = 'https://chat.ariha.ai/';
@@ -610,8 +610,8 @@
             referrer.includes('ariha.ai') || 
             referrer.includes('.ariha.ai')
           )) {
-          // If from ariha.ai domain, go back to the referrer page
-          window.location.href = referrer;
+          // go back one step
+          window.history.back();
         } else {
           // Otherwise, go to chat.ariha.ai
           window.location.href = 'https://chat.ariha.ai/';
