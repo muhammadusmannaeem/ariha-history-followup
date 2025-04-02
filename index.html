@@ -593,10 +593,15 @@
             referrer.includes('ariha.ai') || 
             referrer.includes('.ariha.ai')
           )) {
-          // go back one step
-          window.history.back();
+          // If referrer contains 'share', redirect to chat.ariha.ai
+          if (referrer.includes('ariha.ai/share')) {
+            window.location.href = 'https://chat.ariha.ai/';
+          } else {
+            // For history or other ariha.ai pages, go back one step
+            window.history.back();
+          }
         } else {
-          // Otherwise, go to chat.ariha.ai
+          // If not from ariha.ai domain, go to chat.ariha.ai
           window.location.href = 'https://chat.ariha.ai/';
         }
       });
@@ -610,10 +615,15 @@
             referrer.includes('ariha.ai') || 
             referrer.includes('.ariha.ai')
           )) {
-          // go back one step
-          window.history.back();
+          // If referrer contains 'share', redirect to chat.ariha.ai
+          if (referrer.includes('ariha.ai/share')) {
+            window.location.href = 'https://chat.ariha.ai/';
+          } else {
+            // For history or other ariha.ai pages, go back one step
+            window.history.back();
+          }
         } else {
-          // Otherwise, go to chat.ariha.ai
+          // If not from ariha.ai domain, go to chat.ariha.ai
           window.location.href = 'https://chat.ariha.ai/';
         }
       });
