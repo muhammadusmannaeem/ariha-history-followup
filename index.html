@@ -593,6 +593,8 @@
             referrer.includes('ariha.ai') || 
             referrer.includes('.ariha.ai')
           )) {
+            console.log(referrer);
+            return;
           // If referrer contains 'share', redirect to chat.ariha.ai
           if (referrer.includes('ariha.ai/share')) {
             window.location.href = 'https://chat.ariha.ai/';
